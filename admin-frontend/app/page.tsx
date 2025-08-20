@@ -92,7 +92,7 @@ export default function Home() {
             aria-hidden
             src="/globe.svg"
             alt="Globe icon"
-            width={3}
+            width={4}
             height={16}
           />
           Go to nextjs.org →
