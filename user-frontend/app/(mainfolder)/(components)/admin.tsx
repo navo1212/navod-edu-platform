@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getToken, removeToken } from '../utils/auth';
+import { getToken, removeToken } from '../../utils/auth';
 import { useRouter } from 'next/router';
 
 export default function AdminPage() {
