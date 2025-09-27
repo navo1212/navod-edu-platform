@@ -1,49 +1,49 @@
-'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { api, setAccessToken } from './api-client';
+// src/lib/api-client.ts
+let accessToken: string | null = null;
+export const setAccessToken = (t: string | null) => { accessToken = t; };
 
-type User = { id: string; email: string; role: 'admin' | 'user' };
+export async function api<T = any>(path: string, init: RequestInit = {}) {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
-const AuthCtx = createContext<{
-  user: User | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}>({ user: null, loading: true, login: async () => {}, logout: async () => {} });
-
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Hydrate session on load
-  useEffect(() => {
-    api<User>('/me')
-      .then((u) => setUser(u))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    const { accessToken } = await api<{ accessToken: string }>('/auth/login', {
+  // Ensure we have an access token before first request
+  if (!accessToken) {
+    const r = await fetch(`${base}/auth/refresh`, {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      credentials: 'include',
     });
-    setAccessToken(accessToken);
-    const u = await api<User>('/me');
-    setUser(u);
-  };
+    if (r.ok) {
+      const { accessToken: newAcc } = await r.json();
+      setAccessToken(newAcc);
+    }
+  }
 
-  const logout = async () => {
-    await api('/auth/logout', { method: 'POST' });
-    setUser(null);
-    setAccessToken(null);
-  };
+  const doFetch = async () =>
+    fetch(`${base}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(init.headers || {}),
+      },
+      credentials: 'include',
+    });
 
-  return (
-    <AuthCtx.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthCtx.Provider>
-  );
-};
+  let res = await doFetch();
 
-export const useAuth = () => useContext(AuthCtx);
+  // If still unauthorized, try one more refresh
+  if (res.status === 401) {
+    const r = await fetch(`${base}/auth/refresh`, { method: 'POST', credentials: 'include' });
+    if (r.ok) {
+      const { accessToken: newAcc } = await r.json();
+      setAccessToken(newAcc);
+      res = await doFetch();
+    }
+  }
+
+  if (!res.ok) throw new Error(await res.text());
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return undefined as T;
+  }
+}
