@@ -45,3 +45,6 @@ export default function AdminCoursesPage() {
     </div>
   );
 }
+
+
+// after vedeo

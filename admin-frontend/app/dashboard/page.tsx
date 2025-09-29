@@ -40,6 +40,6 @@ export default function Dashboard() {
       <h1 className="text-xl font-semibold">User Dashboard</h1>
       {error && <p className="text-red-500">{error}</p>}
       {me && <p>Welcome, {me.name || me.email}!</p>}
-    </div>
+    </div> 
   );
 }
