@@ -79,7 +79,6 @@
 
 //aftr ui added
 
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -95,18 +94,34 @@ export default function CoursesPage() {
 
   useEffect(() => {
     api("/courses")
-      .then(setCourses)
+      .then((data) => {
+        console.log("[v0] Courses fetched:", data)
+        if (data.length > 0) {
+          console.log("[v0] First course keys:", Object.keys(data[0]))
+          console.log("[v0] First course id field:", data[0].id)
+          console.log("[v0] First course _id field:", data[0]._id)
+        }
+        setCourses(data)
+      })
       .finally(() => setLoading(false))
   }, [])
 
   const handleAddToCart = (course: any) => {
-    addToCart(course)
-    setAddedCourseId(course._id)
+    const courseId = course.id || course._id
+    console.log("[v0] Adding course to cart:", { courseId, title: course.title })
+
+    addToCart({
+      id: courseId,
+      title: course.title,
+      description: course.description,
+      price: course.price,
+    })
+    setAddedCourseId(courseId)
     setTimeout(() => setAddedCourseId(null), 2000)
   }
 
   const isInCart = (courseId: string) => {
-    return cart.some((item) => item._id === courseId)
+    return cart.some((item) => item.id === courseId)
   }
 
   if (loading) {
@@ -135,69 +150,71 @@ export default function CoursesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((c) => (
-            <div
-              key={c._id}
-              className="group bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/50 flex flex-col"
-            >
-              <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                <BookOpen className="h-16 w-16 text-primary/40" />
-              </div>
-
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex-1 space-y-3">
-                  {c.category && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Tag className="h-3 w-3" />
-                      <span className="uppercase tracking-wide">{c.category}</span>
-                    </div>
-                  )}
-
-                  <h2 className="font-semibold text-xl group-hover:text-primary transition-colors">{c.title}</h2>
-                  <p className="text-sm text-muted-foreground line-clamp-3">{c.description}</p>
+          {courses.map((c) => {
+            const courseId = c.id || c._id
+            return (
+              <div
+                key={courseId}
+                className="group bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/50 flex flex-col"
+              >
+                <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                  <BookOpen className="h-16 w-16 text-primary/40" />
                 </div>
 
-                <div className="mt-6 pt-4 border-t space-y-3">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary">${c.price}</span>
-                    <span className="text-sm text-muted-foreground">USD</span>
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="flex-1 space-y-3">
+                    {c.category && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Tag className="h-3 w-3" />
+                        <span className="uppercase tracking-wide">{c.category}</span>
+                      </div>
+                    )}
+
+                    <h2 className="font-semibold text-xl group-hover:text-primary transition-colors">{c.title}</h2>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{c.description}</p>
                   </div>
 
-                  <button
-                    onClick={() => handleAddToCart(c)}
-                    disabled={isInCart(c._id)}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-300 ${
-                      addedCourseId === c._id
-                        ? "bg-green-600 text-white"
-                        : isInCart(c._id)
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow"
-                    }`}
-                  >
-                    {addedCourseId === c._id ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        Added to Cart!
-                      </>
-                    ) : isInCart(c._id) ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        In Cart
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="h-4 w-4" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
+                  <div className="mt-6 pt-4 border-t space-y-3">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-primary">${c.price}</span>
+                      <span className="text-sm text-muted-foreground">USD</span>
+                    </div>
+
+                    <button
+                      onClick={() => handleAddToCart(c)}
+                      disabled={isInCart(courseId)}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-300 ${
+                        addedCourseId === courseId
+                          ? "bg-green-600 text-white"
+                          : isInCart(courseId)
+                            ? "bg-muted text-muted-foreground cursor-not-allowed"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow"
+                      }`}
+                    >
+                      {addedCourseId === courseId ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Added to Cart!
+                        </>
+                      ) : isInCart(courseId) ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          In Cart
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-4 w-4" />
+                          Add to Cart
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
-
