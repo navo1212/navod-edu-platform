@@ -90,12 +90,12 @@
 
 import type React from "react"
 
-import { createContext, ReactNode, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 
 export type CartItem = {
-  description: ReactNode
-  _id: string
+  id: string
   title: string
+  description?: string // Added optional description field for cart display
   price: number
   quantity: number
 }
@@ -145,31 +145,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: Omit<CartItem, "quantity">) => {
     setCart((prev) => {
-      const existingItem = prev.find((c) => c._id === item._id)
+      const existingItem = prev.find((c) => c.id === item.id)
       if (existingItem) {
         // Increment quantity if item already exists
-        return prev.map((c) =>
-          c._id === item._id
-            ? { ...c, quantity: c.quantity + 1 }
-            : c
-        )
+        return prev.map((c) => (c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c))
       }
       // Add new item with quantity 1
-      return [
-        ...prev,
-        {
-          _id: item._id,
-          title: item.title,
-          price: item.price,
-          description: item.description,
-          quantity: 1,
-        },
-      ]
+      return [...prev, { ...item, quantity: 1 }]
     })
   }
 
   const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((c) => c._id !== id))
+    setCart((prev) => prev.filter((c) => c.id !== id))
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -177,7 +164,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(id)
       return
     }
-    setCart((prev) => prev.map((c) => (c._id === id ? { ...c, quantity } : c)))
+    setCart((prev) => prev.map((c) => (c.id === id ? { ...c, quantity } : c)))
   }
 
   const clearCart = () => {
@@ -185,7 +172,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const getItemQuantity = (id: string) => {
-    const item = cart.find((c) => c._id === id)
+    const item = cart.find((c) => c.id === id)
     return item?.quantity || 0
   }
 
