@@ -127,7 +127,6 @@
 
 
 //after ui added
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -145,6 +144,8 @@ export default function Dashboard() {
     ;(async () => {
       try {
         setLoading(true)
+        console.log("[v0] Dashboard: Fetching user and enrollments...")
+
         const refresh = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
           method: "POST",
           credentials: "include",
@@ -159,11 +160,15 @@ export default function Dashboard() {
         }
 
         const user = await api("/me")
+        console.log("[v0] Dashboard: User data:", user)
         setMe(user)
 
         const enrolled = await api("/enrollments/my-courses")
+        console.log("[v0] Dashboard: Enrolled courses:", enrolled)
+        console.log("[v0] Dashboard: Number of courses:", enrolled?.length || 0)
         setCourses(enrolled)
       } catch (err: any) {
+        console.error("[v0] Dashboard error:", err)
         setError(err.message || "Failed to load dashboard")
       } finally {
         setLoading(false)
@@ -240,26 +245,30 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((c) => (
-              <Link
-                key={c._id}
-                href={`/dashboard/courses/${c._id}`}
-                className="group bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/50"
-              >
-                <div className="space-y-3">
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <BookOpen className="h-6 w-6 text-primary" />
+            {courses
+              .filter((c) => c != null)
+              .map((c) => (
+                <Link
+                  key={c.id || c._id}
+                  href={`/courses/${c.id || c._id}`}
+                  className="group bg-card border rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/50"
+                >
+                  <div className="space-y-3">
+                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <BookOpen className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                        {c.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <span className="text-sm text-primary font-medium">Continue learning →</span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">{c.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{c.description}</p>
-                  </div>
-                  <div className="pt-2 border-t">
-                    <span className="text-sm text-primary font-medium">Continue learning →</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
           </div>
         )}
       </div>
